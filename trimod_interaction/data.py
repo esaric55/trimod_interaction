@@ -135,14 +135,23 @@ class MultiModalShotDataset(Dataset):
 
         self.files = files
         self.read_frame = {
-            'rgb': lambda idx: cv2.imread(self.files['rgb'][idx], cv2.IMREAD_COLOR)[..., ::-1],
-            'depth': lambda idx: cv2.imread(self.files['depth'][idx], cv2.IMREAD_ANYDEPTH),
-            'thermal': lambda idx: cv2.imread(self.files['thermal'][idx], cv2.IMREAD_ANYDEPTH),
+            'rgb': self.read_rgb,
+            'depth': self.read_depth,
+            'thermal': self.read_thermal
         }
 
         with open(os.path.join(root, 'actions.txt'), 'r') as f:
             self.actions = [int(line)
                             for line in f.readlines()]
+
+    def read_rgb(self, idx: int):
+        return cv2.imread(self.files['rgb'][idx], cv2.IMREAD_COLOR)[..., ::-1]
+
+    def read_depth(self, idx: int):
+        return cv2.imread(self.files['depth'][idx], cv2.IMREAD_ANYDEPTH)          
+
+    def read_thermal(self, idx: int):
+        return cv2.imread(self.files['thermal'][idx], cv2.IMREAD_ANYDEPTH)
 
     def __len__(self) -> int:
         return len(self.files[self.modalities[0]])
@@ -161,19 +170,13 @@ class MultiModalShotDataset(Dataset):
             return frames, label
         else:
             all_frames = []
-            actions = []
             for i in range(idx, idx+self.window_size):
                 frames = [
                     self.read_frame[modality](i)
                     for modality in self.modalities
                 ]
                 all_frames.append(frames)
-                # TODO: fix
-                if i < len(self.actions) and i >= 0:
-                    actions.append(self.actions[i])
-                else:
-                    actions.append([''])
-            label = actions
+            label = self.actions[idx+self.window_size-1]
             if self.transform != None:
                 all_frames = self.transform(all_frames)
             if self.target_transform != None:

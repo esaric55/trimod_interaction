@@ -92,6 +92,10 @@ class ResNeXt(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
+        # x: batch size, window, channels, width, height
+        x = x.permute(0, 2, 1, 4, 3)
+        # x: batch size, channels, window, height, width
+
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
