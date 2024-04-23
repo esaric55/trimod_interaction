@@ -114,11 +114,13 @@ class MultiModalShotDataset(Dataset):
     def __init__(self,
                  root,
                  modalities: List[str] = ['rgb', 'depth', 'thermal'],
+                 targets = 'actions',
                  transform=None,
                  target_transform=None,
                  window_size=8) -> None:
 
         self.modalities = modalities
+        self.targets = targets
         self.transform = transform
         self.target_transform = target_transform
         self.window_size = window_size
@@ -139,9 +141,9 @@ class MultiModalShotDataset(Dataset):
             'depth': self.read_depth,
             'thermal': self.read_thermal
         }
-
-        with open(os.path.join(root, 'actions.txt'), 'r') as f:
-            self.actions = [int(line)
+        if 'actions' in self.targets:
+            with open(os.path.join(root, 'actions.txt'), 'r') as f:
+                self.actions = [int(line)
                             for line in f.readlines()]
 
     def read_rgb(self, idx: int):
@@ -190,6 +192,7 @@ class MultiModalDataset(Dataset):
                  root='../data',
                  split='train',
                  rgb=True, depth=True, thermal=True,
+                 targets = 'actions',
                  transform=None,
                  target_transform=None,
                  window_size=1):
@@ -202,6 +205,7 @@ class MultiModalDataset(Dataset):
             modalities.append('thermal')
         assert all([modality in ['rgb', 'depth', 'thermal']
                    for modality in modalities])
+        assert all([target in 'actions' for target in targets])
         assert split in ['train', 'val', 'test']
         shots_dir = root
         shots_dir = os.path.join(shots_dir, split)
@@ -211,7 +215,7 @@ class MultiModalDataset(Dataset):
         ]
         self.shots = [
             MultiModalShotDataset(
-                shot_dir, modalities, transform, target_transform, window_size
+                shot_dir, modalities, targets, transform, target_transform, window_size
             )
             for shot_dir in shot_dirs
         ]

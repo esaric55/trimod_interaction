@@ -91,12 +91,13 @@ def main(data_dir, learning_rate, rgb, depth, thermal, num_epochs):
     #     torch.tensor
     # ])
     train_data = MultiModalDataset(data_dir, split='train', transform=transform,
+                                   targets ='actions',
                                    target_transform=torch.tensor,
                                    window_size=8,
                                    rgb=rgb, depth=depth, thermal=thermal)
     train_loader = DataLoader(train_data, batch_size=2, shuffle=True, num_workers=4)
 
-    val_data = MultiModalDataset(data_dir, split='val', transform=transform,
+    val_data = MultiModalDataset(data_dir, split='val', transform=transform, targets ='actions',
                                  target_transform=torch.tensor,
                                  window_size=8,
                                  rgb=rgb, depth=depth, thermal=thermal)
