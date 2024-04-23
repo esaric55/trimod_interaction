@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.transforms as transforms
+from torchmetrics.classification import BinaryAccuracy
+import json
 from tqdm import tqdm
 
 from torch.utils.data import DataLoader
@@ -10,10 +12,13 @@ from trimod_interaction.model import generate_model
 from trimod_interaction.data import MultiModalDataset, NormalizeListTransform
 
 import click
+accuracy_values = []
+results = []
 
 def train(model, loader, optimizer, criterion, device):
     model.train()
     total_loss = 0
+    accuracy = BinaryAccuracy()
     for inputs, targets in tqdm(loader):
         inputs = inputs.to(device)
         targets = targets.to(device)
@@ -21,13 +26,16 @@ def train(model, loader, optimizer, criterion, device):
         optimizer.zero_grad()
         outputs= model(inputs)
         # TODO: calculate Accuracy/Precision/Recall/F1
+        predictions=outputs.argmax(axis=1)
+        acc = accuracy(predictions,targets)
 
         loss = criterion(outputs, targets)
         loss.backward()
         optimizer.step()
         total_loss += loss.item()
     # TODO: return Accuracy/Precision/Recall/F1
-    return total_loss / len(loader)
+        avg_accuracy = acc.compute()
+    return total_loss / len(loader),avg_accuracy
 
 def test(model, loader, criterion, device):
     model.eval()
@@ -102,9 +110,16 @@ def main(data_dir, learning_rate, rgb, depth, thermal, num_epochs):
 
     # Training loop
     for epoch in range(num_epochs):
-        train_loss = train(model, train_loader, optimizer, criterion, device)
+        results = train(model, train_loader, optimizer, criterion, device)
         # TODO: store training metrics
+        train_loss = results [0]
+        accuracy_value = results[1]
+        accuracy_values.apend(results [1])
+        with open('acc_json', 'w') as f:
+            json.dump(accuracy_values, f)
         print(f"Epoch {epoch+1}, Train Loss: {train_loss}")
+        print(f"Epoch {epoch+1}, Accuracy: {accuracy_value}")
+
 
         # Validation loop
         val_loss = test(model, val_loader, criterion, device)
