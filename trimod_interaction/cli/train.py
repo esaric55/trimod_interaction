@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.transforms as transforms
-from torchmetrics.classification import BinaryAccuracy
+from torchmetrics.functional import accuracy
+from torchmetrics import Precision, Recall, F1
 import json
 from tqdm import tqdm
 
@@ -19,6 +20,11 @@ def train(model, loader, optimizer, criterion, device):
     model.train()
     total_loss = 0
     accuracy = BinaryAccuracy()
+     # Initialize metrics
+    precision = Precision(num_classes=2, average='binary')
+    recall = Recall(num_classes=2, average='binary')
+    f1 = F1(num_classes=2, average='binary')
+
     for inputs, targets in tqdm(loader):
         inputs = inputs.to(device)
         targets = targets.to(device)
@@ -29,13 +35,24 @@ def train(model, loader, optimizer, criterion, device):
         predictions=outputs.argmax(axis=1)
         acc = accuracy(predictions,targets)
 
+        # Calculate metrics
+        prec = precision(predictions, targets)
+        rec = recall(predictions, targets)
+        f1_score = f1(predictions, targets)
+
         loss = criterion(outputs, targets)
         loss.backward()
         optimizer.step()
         total_loss += loss.item()
     # TODO: return Accuracy/Precision/Recall/F1
-        avg_accuracy = acc.compute()
-    return total_loss / len(loader),avg_accuracy
+        #avg_accuracy = acc.compute()
+    # Compute average metrics
+    avg_precision = precision.compute()
+    avg_recall = recall.compute()
+    avg_f1 = f1.compute()
+    avg_accuracy = accuracy(predictions, targets)  # Using torchmetrics accuracy
+    t_loss = total_loss/len(loader)
+    return t_loss, avg_precision, avg_recall, avg_f1, avg_accuracy
 
 def test(model, loader, criterion, device):
     model.eval()
@@ -95,31 +112,46 @@ def main(data_dir, learning_rate, rgb, depth, thermal, num_epochs):
                                    target_transform=torch.tensor,
                                    window_size=8,
                                    rgb=rgb, depth=depth, thermal=thermal)
-    train_loader = DataLoader(train_data, batch_size=2, shuffle=True, num_workers=4)
+    train_loader = DataLoader(train_data, batch_size=2, shuffle=True, num_workers=2)
 
     val_data = MultiModalDataset(data_dir, split='val', transform=transform, targets ='actions',
                                  target_transform=torch.tensor,
                                  window_size=8,
                                  rgb=rgb, depth=depth, thermal=thermal)
-    val_loader = DataLoader(val_data, batch_size=2, shuffle=False, num_workers=4)
+    val_loader = DataLoader(val_data, batch_size=2, shuffle=False, num_workers=2)
 
     test_data = MultiModalDataset(data_dir, split='test', transform=transform,
                                   # target_transform=ActionListTransform(model.selected_actions),
                                   window_size=8,
                                   rgb=rgb, depth=depth, thermal=thermal)
-    test_loader = DataLoader(test_data, batch_size=2, shuffle=False, num_workers=4)
+    test_loader = DataLoader(test_data, batch_size=2, shuffle=False, num_workers=2)
 
     # Training loop
     for epoch in range(num_epochs):
         results = train(model, train_loader, optimizer, criterion, device)
         # TODO: store training metrics
-        train_loss = results [0]
-        accuracy_value = results[1]
-        accuracy_values.apend(results [1])
-        with open('acc_json', 'w') as f:
-            json.dump(accuracy_values, f)
+        train_loss, avg_precision, avg_recall, avg_f1, avg_accuracy = results
+        
+        # Store training metrics
+        accuracy_values.append(avg_accuracy)
+        precision_values.append(avg_precision)
+        recall_values.append(avg_recall)
+        f1_values.append(avg_f1)
+
+         # Save metrics to JSON file
+        metrics_dict = {
+            'accuracy': accuracy_values,
+            'precision': precision_values,
+            'recall': recall_values,
+            'f1': f1_values
+        }
+        with open('metrics.json', 'w') as f:
+            json.dump(metrics_dict, f)
         print(f"Epoch {epoch+1}, Train Loss: {train_loss}")
-        print(f"Epoch {epoch+1}, Accuracy: {accuracy_value}")
+        print(f"Epoch {epoch+1}, Accuracy: {avg_accuracy}")
+        print(f"Epoch {epoch+1}, Precision: {avg_precision}")
+        print(f"Epoch {epoch+1}, Recall: {avg_recall}")
+        print(f"Epoch {epoch+1}, F1 Score: {avg_f1}")
 
 
         # Validation loop
