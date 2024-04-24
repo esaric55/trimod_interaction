@@ -2,8 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.transforms as transforms
-from torchmetrics.functional import accuracy
-from torchmetrics import Precision, Recall, F1
+from torchmetrics.classification import BinaryAccuracy, BinaryPrecision, BinaryRecall, BinaryF1Score
 import json
 import matplotlib.pyplot as plt
 from tqdm import tqdm
@@ -22,9 +21,9 @@ def train(model, loader, optimizer, criterion, device):
     total_loss = 0
     accuracy = BinaryAccuracy()
      # Initialize metrics
-    precision = Precision(num_classes=2, average='binary')
-    recall = Recall(num_classes=2, average='binary')
-    f1 = F1(num_classes=2, average='binary')
+    precision = BinaryPrecision()
+    recall = BinaryRecall()
+    f1 = BinaryF1Score()
 
     for inputs, targets in tqdm(loader):
         inputs = inputs.to(device)
@@ -34,7 +33,8 @@ def train(model, loader, optimizer, criterion, device):
         outputs= model(inputs)
         # TODO: calculate Accuracy/Precision/Recall/F1
         predictions=outputs.argmax(axis=1)
-        acc = accuracy(predictions,targets)
+        preds = (predictions >=0.5).long()
+        acc = accuracy(preds,targets)
 
         # Calculate metrics
         prec = precision(predictions, targets)
