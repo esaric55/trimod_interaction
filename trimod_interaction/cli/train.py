@@ -5,6 +5,7 @@ import torchvision.transforms as transforms
 from torchmetrics.functional import accuracy
 from torchmetrics import Precision, Recall, F1
 import json
+import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 from torch.utils.data import DataLoader
@@ -137,6 +138,14 @@ def main(data_dir, learning_rate, rgb, depth, thermal, num_epochs):
         precision_values.append(avg_precision)
         recall_values.append(avg_recall)
         f1_values.append(avg_f1)
+
+        #Plotting
+        metrics_names = ['Accuracy', 'Precision', 'Recall', 'F1']
+        metrics_values = [avg_accuracy, avg_precision, avg_recall, avg_f1]
+        plt.bar(metrics_names, metrics_values, color=['blue', 'green', 'orange', 'red'])
+        plt.ylabel('Metrics Value')
+        plt.title('Model Evaluation Metrics')
+        plt.show()
 
          # Save metrics to JSON file
         metrics_dict = {
