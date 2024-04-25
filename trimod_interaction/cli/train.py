@@ -19,11 +19,11 @@ results = []
 def train(model, loader, optimizer, criterion, device):
     model.train()
     total_loss = 0
-    accuracy = BinaryAccuracy()
+    accuracy = BinaryAccuracy().to(device)
      # Initialize metrics
-    precision = BinaryPrecision()
-    recall = BinaryRecall()
-    f1 = BinaryF1Score()
+    precision = BinaryPrecision().to(device)
+    recall = BinaryRecall().to(device)
+    f1 = BinaryF1Score().to(device)
 
     for inputs, targets in tqdm(loader):
         inputs = inputs.to(device)
