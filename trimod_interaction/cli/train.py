@@ -13,8 +13,6 @@ from trimod_interaction.model import generate_model
 from trimod_interaction.data import MultiModalDataset, NormalizeListTransform
 
 import click
-accuracy_values = []
-results = []
 
 def train(model, loader, optimizer, criterion, device):
     model.train()
@@ -32,8 +30,7 @@ def train(model, loader, optimizer, criterion, device):
         optimizer.zero_grad()
         outputs= model(inputs)
         # TODO: calculate Accuracy/Precision/Recall/F1
-        predictions=outputs.argmax(axis=1)
-        preds = (predictions >=0.5).long()
+        preds=outputs.argmax(axis=1)
         acc = accuracy(preds,targets)
 
         # Calculate metrics
@@ -126,7 +123,9 @@ def main(data_dir, learning_rate, rgb, depth, thermal, num_epochs):
                                   window_size=8,
                                   rgb=rgb, depth=depth, thermal=thermal)
     test_loader = DataLoader(test_data, batch_size=2, shuffle=False, num_workers=2)
-
+    
+    accuracy_values = []
+    results = []
     # Training loop
     for epoch in range(num_epochs):
         results = train(model, train_loader, optimizer, criterion, device)
@@ -154,8 +153,7 @@ def main(data_dir, learning_rate, rgb, depth, thermal, num_epochs):
             'recall': recall_values,
             'f1': f1_values
         }
-        with open('metrics.json', 'w') as f:
-            json.dump(metrics_dict, f)
+    
         print(f"Epoch {epoch+1}, Train Loss: {train_loss}")
         print(f"Epoch {epoch+1}, Accuracy: {avg_accuracy}")
         print(f"Epoch {epoch+1}, Precision: {avg_precision}")
@@ -169,6 +167,8 @@ def main(data_dir, learning_rate, rgb, depth, thermal, num_epochs):
         print(f"Epoch {epoch+1}, Validation Loss: {val_loss}")
 
         # TODO: Save model if validation loss is better
+    with open('metrics.json', 'w') as f:
+            json.dump(metrics_dict, f)
 
     # Test loop
     # TODO: load best model
