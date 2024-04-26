@@ -30,8 +30,8 @@ def train(model, loader, optimizer, criterion, device):
         optimizer.zero_grad()
         outputs= model(inputs)
         # TODO: calculate Accuracy/Precision/Recall/F1
-        preds=outputs.argmax(axis=1)
-        acc = accuracy(preds,targets)
+        predictions=outputs.argmax(axis=1)
+        acc = accuracy(predictions,targets)
 
         # Calculate metrics
         prec = precision(predictions, targets)
