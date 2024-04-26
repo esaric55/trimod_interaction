@@ -89,7 +89,7 @@ def main(data_dir, learning_rate, rgb, depth, thermal, num_epochs):
 
     # Initialize model
     model = generate_model(input_dim=n_channels)
-    model.to(device)
+    model = model.to(device)
 
     # Define loss functions
     criterion = nn.CrossEntropyLoss()
