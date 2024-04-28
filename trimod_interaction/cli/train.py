@@ -125,6 +125,9 @@ def main(data_dir, learning_rate, rgb, depth, thermal, num_epochs):
     test_loader = DataLoader(test_data, batch_size=2, shuffle=False, num_workers=2)
     
     accuracy_values = []
+    precision_values = []
+    recall_values = []
+    f1_values = []
     results = []
     # Training loop
     for epoch in range(num_epochs):
@@ -146,13 +149,6 @@ def main(data_dir, learning_rate, rgb, depth, thermal, num_epochs):
         plt.title('Model Evaluation Metrics')
         plt.show()
 
-         # Save metrics to JSON file
-        metrics_dict = {
-            'accuracy': accuracy_values,
-            'precision': precision_values,
-            'recall': recall_values,
-            'f1': f1_values
-        }
     
         print(f"Epoch {epoch+1}, Train Loss: {train_loss}")
         print(f"Epoch {epoch+1}, Accuracy: {avg_accuracy}")
@@ -167,6 +163,14 @@ def main(data_dir, learning_rate, rgb, depth, thermal, num_epochs):
         print(f"Epoch {epoch+1}, Validation Loss: {val_loss}")
 
         # TODO: Save model if validation loss is better
+    # Save metrics to JSON file
+    metrics_dict = {
+            'accuracy': accuracy_values,
+            'precision': precision_values,
+            'recall': recall_values,
+            'f1': f1_values
+    }
+    
     with open('metrics.json', 'w') as f:
             json.dump(metrics_dict, f)
 
