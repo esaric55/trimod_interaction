@@ -17,11 +17,10 @@ import click
 def train(model, loader, optimizer, criterion, device):
     model.train()
     total_loss = 0
-    accuracy = BinaryAccuracy().to(device)
-     # Initialize metrics
-    precision = BinaryPrecision().to(device)
-    recall = BinaryRecall().to(device)
-    f1 = BinaryF1Score().to(device)
+    accuracy = BinaryAccuracy().cpu()
+    precision = BinaryPrecision().cpu()
+    recall = BinaryRecall().cpu()
+    f1 = BinaryF1Score().cpu()
 
     for inputs, targets in tqdm(loader):
         inputs = inputs.to(device)
