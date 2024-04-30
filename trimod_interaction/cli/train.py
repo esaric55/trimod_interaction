@@ -144,7 +144,7 @@ def main(data_dir, learning_rate, rgb, depth, thermal, num_epochs):
     recall_values = []
     f1_values = []
     train_metrics = {'loss': [], 'accuracy': [], 'precision': [], 'recall': [], 'f1': []}
-    val_metrics = {'loss': []}
+    val_metrics = {'loss': [], 'accuracy': [], 'precision': [], 'recall': [], 'f1': []}
 
     # Training loop
     for epoch in range(num_epochs):
@@ -170,8 +170,13 @@ def main(data_dir, learning_rate, rgb, depth, thermal, num_epochs):
 
 
         # Validation loop
-        val_loss = test(model, val_loader, criterion, device)
+        val_loss, precision, recall, f1, accuracy = test(model, val_loader, criterion, device)
         # TODO: store validation metrics
+        val_metrics['loss'].append(train_loss)
+        val_metrics['accuracy'].append(accuracy)
+        val_metrics['precision'].append(precision)
+        val_metrics['recall'].append(recall)
+        val_metrics['f1'].append(f1)
         print(f"Epoch {epoch+1}, Validation Loss: {val_loss}")
     
     metrics_names = ['Accuracy', 'Precision', 'Recall', 'F1']
@@ -198,9 +203,37 @@ def main(data_dir, learning_rate, rgb, depth, thermal, num_epochs):
     with open('metrics.json', 'w') as f:
             json.dump(metrics_dict, f)
    
-    plt.bar(metrics_names, metrics_values, color=['blue', 'green', 'orange', 'red'])
-    plt.ylabel('Metrics Value')
-    plt.title('Model Evaluation Metrics')
+    # Plotting precision-recall curve
+    plt.subplot(2, 2, 1)
+    plt.plot(avg_recall,avg_precision, marker='.')
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.title('Precision-Recall Curve')
+
+    # Plotting accuracy curve
+    plt.subplot(2, 2, 2)
+    plt.plot(np.arange(len(avg_accuracy)), avg_accuracy, marker='.')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.title('Accuracy Curve')
+
+    # Plotting F1 score curve
+    plt.subplot(2, 2, 3)
+    plt.plot(np.arange(len(avg_f1)), avg_f1, marker='.')
+    plt.xlabel('Epoch')
+    plt.ylabel('F1 Score')
+    plt.title('F1 Score Curve')
+
+    # Plotting train and validation loss curves
+    plt.subplot(2, 2, 4)
+    plt.plot(np.arange(len(train_loss)), train_loss, label='Train')
+    plt.plot(np.arange(len(val_loss)), val_loss, label='Validation')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Train and Validation Loss')
+    plt.legend()
+
+    plt.tight_layout()  # Adjust layout to prevent overlap of subplots
     plt.show()
 
     # Test loop
