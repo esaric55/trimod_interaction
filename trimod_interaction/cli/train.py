@@ -76,7 +76,11 @@ def test(model, loader, criterion, device):
             loss = criterion(outputs, targets)
             total_loss += loss.item()
     # TODO: return Accuracy/Precision/Recall/F1
-            t_loss = total_loss/len(loader)
+    t_loss = total_loss/len(loader)
+    avg_precision = precision.compute()
+    avg_recall = recall.compute()
+    avg_f1 = f1.compute()
+    avg_accuracy = accuracy.compute()
     return t_loss, avg_precision, avg_recall, avg_f1, avg_accuracy
 
 @click.command()
